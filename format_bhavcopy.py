@@ -49,7 +49,7 @@ with DAG(
     def get_conf(**context):
         run_date =  context["dag_run"].conf.get("run_date") or context["ds"]
         run_date = datetime.strptime(run_date, "%Y-%m-%d").strftime("%Y%m%d")
-        prev_trading_day = conf.get("prev_trading_day") #not using
+        # prev_trading_day = context["dag_run"].conf.get("prev_trading_day") #not using
         segments = context["dag_run"].conf.get("market_segments") or market_segments
         return [{"market_segment": ms, "run_date": run_date} for ms in segments]
 
@@ -172,7 +172,7 @@ with DAG(
         trigger_dag_id="reassignment_dag",
         wait_for_completion=False,
         reset_dag_run=True,
-        conf={"triggered_by": "filter_bhavcopies"}
+        # conf={"triggered_by": "filter_bhavcopies"}
     )
 
     loaded >> trigger

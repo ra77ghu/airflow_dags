@@ -92,15 +92,27 @@ with DAG(
     default_args=default_args,
     schedule='@daily',
     catchup=False,
+    params={
+        "run_date": "2025-05-16",
+        "market_segments": ["nsefno", "nsecm","bsefno", "bsecm"]
+    },
     tags=["bhavcopy", "dynamic"],
 ) as dag:
 
+    print_params = BashOperator(
+        task_id='print_params',
+        bash_command='echo "Run date is {{ params.run_date }} and segments are {{ params.market_segments }}"'
+    )
+
     @task
-    def get_run_date(**context):
-        return context["dag_run"].conf.get("run_date") or context["ds"]
+    def get_conf(**context):
+        run_date = context["dag_run"].conf.get("run_date") or context["ds"]
+        run_date = datetime.strptime(run_date, "%Y-%m-%d").strftime("%Y%m%d")
+        segments = context["dag_run"].conf.get("market_segments") or market_segments
+        return [{"market_segment": ms, "run_date": run_date} for ms in segments]
         
 
-    run_date_task = get_run_date()
+    run_date_task = get_conf()
 
     check_working_day = BashOperator(
         task_id='check_working_day',
@@ -145,5 +157,5 @@ with DAG(
         trigger_dag_id="filter_bhavcopies",
         wait_for_completion=False,
         reset_dag_run=True,
-        conf={"triggered_by":"download_bhavcopies"}
+        # conf={"triggered_by":"download_bhavcopies"}
     )
